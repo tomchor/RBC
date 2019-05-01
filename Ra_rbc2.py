@@ -33,7 +33,7 @@ logger = logging.getLogger(__name__)
 
 
 # Parameters
-scale = 3
+scale = 8
 ratio = 5
 
 lz = 1
@@ -44,7 +44,7 @@ print(f"Ratio: {ratio}\nΔz = {lz/nz}\nTotal size = {nz*nx} points\n")
 
 epsilon = 0.8
 Pr = 1.0
-Ra = 1e9
+Ra = 1e13
 
 dt_0 = 1e-10/scale
 
@@ -79,7 +79,6 @@ problem.add_bc("right(w) = 0", condition="(nx != 0)")
 problem.add_bc("integ_z(p) = 0", condition="(nx == 0)")
 
 # Build solver
-#solver = problem.build_solver(de.timesteppers.MCNAB2)
 solver = problem.build_solver(de.timesteppers.RK443)
 logger.info('Solver built')
 
@@ -101,12 +100,12 @@ b['g'] = -F*(z - pert)
 b.differentiate('z', out=bz)
 
 # Integration parameters
-solver.stop_sim_time = 200
-solver.stop_wall_time = 60 * 60. * 24 * 4 # maximum number of seconds
+solver.stop_sim_time = 5
+solver.stop_wall_time = 60 * 60. * 8 # maximum number of seconds
 solver.stop_iteration = np.inf
 
 # Analysis
-snap = solver.evaluator.add_file_handler('snapshots_ra', sim_dt=0.2, max_writes=10)
+snap = solver.evaluator.add_file_handler('snapshots_ra', sim_dt=0.001, max_writes=10)
 snap.add_task("p", scales=1, name='p')
 snap.add_task("b", scales=1, name='b')
 snap.add_task("u", scales=1, name='u')
@@ -116,7 +115,7 @@ snap.add_task("w", scales=1, name='w')
 #CFL = flow_tools.CFL(solver, initial_dt=dt_0, cadence=5, safety=1.5,
 #                     max_change=1.5, min_change=0.1, max_dt=1e-2)
 CFL = flow_tools.CFL(solver, initial_dt=dt_0, max_dt=1e-2, cadence=5, safety=1.5, max_change=1.5)
-CFL.add_velocities(('2*u', '2*w'))
+CFL.add_velocities(('1.5*u', '1.5*w'))
 
 # Flow properties
 flow = flow_tools.GlobalFlowProperty(solver, cadence=10)

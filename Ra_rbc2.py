@@ -44,7 +44,7 @@ print(f"Ratio: {ratio}\nΔz = {lz/nz}\nTotal size = {nz*nx} points\n")
 
 epsilon = 0.8
 Pr = 1.0
-Ra = 1e13
+Ra = 1e12
 
 dt_0 = 1e-10/scale
 
@@ -101,7 +101,7 @@ b.differentiate('z', out=bz)
 
 # Integration parameters
 solver.stop_sim_time = 5
-solver.stop_wall_time = 60 * 60. * 8 # maximum number of seconds
+solver.stop_wall_time = 60 * 60. *3 # maximum number of seconds
 solver.stop_iteration = np.inf
 
 # Analysis
@@ -115,7 +115,7 @@ snap.add_task("w", scales=1, name='w')
 #CFL = flow_tools.CFL(solver, initial_dt=dt_0, cadence=5, safety=1.5,
 #                     max_change=1.5, min_change=0.1, max_dt=1e-2)
 CFL = flow_tools.CFL(solver, initial_dt=dt_0, max_dt=1e-2, cadence=5, safety=1.5, max_change=1.5)
-CFL.add_velocities(('1.5*u', '1.5*w'))
+CFL.add_velocities(('2*u', '2*w'))
 
 # Flow properties
 flow = flow_tools.GlobalFlowProperty(solver, cadence=10)

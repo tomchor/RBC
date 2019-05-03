@@ -19,7 +19,7 @@ import dedaLES
 logger = logging.getLogger(__name__)
 
 # Parameters
-Ra = 1e5    # Rayleigh number. Ra = Δb*L^3 / ν*κ = Δb*L^3*Pr / ν^2
+Ra = 1e7   # Rayleigh number. Ra = Δb*L^3 / ν*κ = Δb*L^3*Pr / ν^2
 Pr = 0.7    # Prandtl number
 a  = 1e-1   # Noise amplitude for initial condition
 Δb = 1.0    # Buoyancy difference
@@ -30,10 +30,11 @@ a  = 1e-1   # Noise amplitude for initial condition
 
 # Construct model
 closure = None #dedaLES.AnisotropicMinimumDissipation() #dedaLES.ConstantSmagorinsky()
-model = dedaLES.BoussinesqChannelFlow(Lx=1, Ly=1, Lz=6, nx=64, ny=64, nz=32, ν=ν, κ=κ, Δb=1, closure=closure)
+#closure = dedaLES.AnisotropicMinimumDissipation() #dedaLES.ConstantSmagorinsky()
+model = dedaLES.BoussinesqChannelFlow(Lx=1, Ly=1, Lz=6, nx=32, ny=32, nz=32, ν=ν, κ=κ, Δb=1, closure=closure)
 
 model.set_bc("no penetration", "top", "bottom")
-model.set_bc("no slip", "top", "bottom")
+model.set_bc("free slip", "top", "bottom")
 model.problem.add_bc("right(b) = 0")
 model.problem.add_bc("left(b) = Δb")
 
@@ -54,7 +55,7 @@ if closure is None: closure_name = 'DNS'
 else:               closure_name = closure.__class__.__name__
 
 simulation_name = "rayleigh_benard_snapshots_{:s}".format(closure_name)
-analysis = model.solver.evaluator.add_file_handler(simulation_name, iter=100, max_writes=100, sim_dt=0.1)
+analysis = model.solver.evaluator.add_file_handler(simulation_name, iter=100, max_writes=100, sim_dt=0.05)
 analysis.add_system(model.solver.state, layout='g')
 
 stats = flow_tools.GlobalFlowProperty(model.solver, cadence=10)
@@ -64,8 +65,8 @@ stats.add_property("1 + (ε + ε_sgs)/κ", name="Nu_ε")
 stats.add_property("(χ + χ_sgs)/κ", name="Nu_χ")
 
 # CFL
-CFL = flow_tools.CFL(model.solver, initial_dt=1e-4, cadence=10, safety=0.5, max_change=1.5)
-CFL.add_velocities(('u', 'v', 'w'))
+CFL = flow_tools.CFL(model.solver, initial_dt=1e-5, cadence=10, safety=0.5, max_change=1.5)
+CFL.add_velocities(('1.5*u', '1.5*v', '1.5*w'))
 
 # Main loop
 try:
@@ -75,6 +76,8 @@ try:
     while model.solver.ok:
         dt = CFL.compute_dt()
         model.solver.step(dt)
+        if np.isnan(stats.max("Re")):
+            break
         if (model.solver.iteration-1) % 10 == 0:
             compute_time = time.time() - log_time
             log_time = time.time()
